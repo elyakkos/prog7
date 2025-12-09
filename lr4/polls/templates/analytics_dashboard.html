@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель аналитики голосований</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4a6ee0 0%, #6a11cb 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            color: #6a11cb;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4a6ee0;
+            margin: 10px 0;
+        }
+
+        .stat-change {
+            font-size: 0.9rem;
+            color: #28a745;
+        }
+
+        .controls {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        select, input, button {
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #4a6ee0;
+            box-shadow: 0 0 0 3px rgba(74, 110, 224, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4a6ee0 0%, #6a11cb 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .section h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4a6ee0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h2 i {
+            color: #4a6ee0;
+        }
+
+        .poll-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .poll-item {
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .poll-item:hover {
+            background: #f8f9fa;
+            border-color: #4a6ee0;
+        }
+
+        .poll-item.active {
+            background: #e8f4ff;
+            border-color: #4a6ee0;
+        }
+
+        .poll-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #212529;
+        }
+
+        .poll-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .chart-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .chart-placeholder {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .chart-image {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .results-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4a6ee0, #6a11cb);
+            border-radius: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4a6ee0;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .export-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .export-btn {
+            background: #28a745;
+            padding: 10px 15px;
+            border-radius: 6px;
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.3s;
+        }
+
+        .export-btn:hover {
+            background: #218838;
+        }
+
+        .export-btn.csv {
+            background: #17a2b8;
+        }
+
+        .export-btn.csv:hover {
+            background: #138496;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+            background: #f8f9fa;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка -->
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Панель аналитики голосований</h1>
+            <p>Статистика, графики и анализ результатов голосований в реальном времени</p>
+        </div>
+
+        <!-- Основная статистика -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <h3><i class="fas fa-poll"></i> Всего голосований</h3>
+                <div class="stat-value" id="totalPolls">0</div>
+                <div class="stat-change">Загружается...</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-vote-yea"></i> Всего голосов</h3>
+                <div class="stat-value" id="totalVotes">0</div>
+                <div class="stat-change">Загружается...</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-chart-bar"></i> Среднее голосов</h3>
+                <div class="stat-value" id="avgVotes">0</div>
+                <div class="stat-change">Загружается...</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-bolt"></i> Активных</h3>
+                <div class="stat-value" id="activePolls">0</div>
+                <div class="stat-change">Загружается...</div>
+            </div>
+        </div>
+
+        <!-- Панель управления -->
+        <div class="controls">
+            <div class="controls-grid">
+                <div class="control-group">
+                    <label for="pollSelect"><i class="fas fa-filter"></i> Выберите голосование:</label>
+                    <select id="pollSelect" onchange="loadPollStats(this.value)">
+                        <option value="">Выберите голосование...</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="chartType"><i class="fas fa-chart-pie"></i> Тип графика:</label>
+                    <select id="chartType" onchange="updateChart()">
+                        <option value="bar">Столбчатая диаграмма</option>
+                        <option value="pie">Круговая диаграмма</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="dateFilter"><i class="fas fa-calendar-alt"></i> Период:</label>
+                    <select id="dateFilter" onchange="filterByDate()">
+                        <option value="all">За все время</option>
+                        <option value="today">Сегодня</option>
+                        <option value="week">За неделю</option>
+                        <option value="month">За месяц</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>&nbsp;</label>
+                    <button class="btn" onclick="refreshAll()">
+                        <i class="fas fa-sync-alt"></i> Обновить данные
+                    </button>
+                </div>
+            </div>
+
+            <div class="export-options">
+                <a href="#" class="export-btn" onclick="exportData('json')">
+                    <i class="fas fa-file-export"></i> Экспорт JSON
+                </a>
+                <a href="#" class="export-btn csv" onclick="exportData('csv')">
+                    <i class="fas fa-file-csv"></i> Экспорт CSV
+                </a>
+                <a href="#" class="export-btn" onclick="exportData('excel')">
+                    <i class="fas fa-file-excel"></i> Экспорт Excel
+                </a>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="content">
+            <!-- Левая колонка: Список голосований -->
+            <div class="section">
+                <h2><i class="fas fa-list"></i> Список голосований</h2>
+                <div id="pollsList" class="poll-list">
+                    <div class="loading">Загрузка голосований...</div>
+                </div>
+                <div id="filterControls" style="margin-top: 20px; display: none;">
+                    <h3><i class="fas fa-sort"></i> Сортировка</h3>
+                    <select onchange="sortPolls(this.value)" style="width: 100%; padding: 10px;">
+                        <option value="date">По дате (новые сначала)</option>
+                        <option value="popularity">По популярности</option>
+                        <option value="title">По названию</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Правая колонка: Детали голосования -->
+            <div class="section">
+                <h2><i class="fas fa-chart-bar"></i> Детальная статистика</h2>
+                <div id="pollDetails">
+                    <div class="loading" id="loadingDetails">Выберите голосование для просмотра статистики</div>
+                </div>
+
+                <div id="chartSection" style="display: none;">
+                    <h3><i class="fas fa-chart-line"></i> Визуализация</h3>
+                    <div class="chart-container">
+                        <div id="chartContainer" class="chart-placeholder">
+                            <i class="fas fa-chart-bar" style="font-size: 48px; margin-bottom: 20px;"></i>
+                            <p>График будет отображен здесь</p>
+                        </div>
+                    </div>
+
+                    <h3><i class="fas fa-table"></i> Подробные результаты</h3>
+                    <table class="results-table" id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>Вариант ответа</th>
+                                <th>Голоса</th>
+                                <th>Процент</th>
+                                <th>Прогресс</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                            <!-- Данные загружаются динамически -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Футер -->
+        <div class="footer">
+            <p><i class="fas fa-microchip"></i> Микросервисы аналитики голосований | Обновлено: <span id="lastUpdate">--:--:--</span></p>
+            <p style="font-size: 0.9rem; margin-top: 10px;">Используются микросервисы: Статистика, Графики, Экспорт, Фильтрация</p>
+        </div>
+    </div>
+
+    <script>
+        // Базовые переменные
+        let currentPollId = null;
+        let allPolls = [];
+
+        // URL микросервисов
+        const API_BASE = '/api/microservices';
+
+        // Загрузка при старте
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardStats();
+            loadPollsList();
+            updateLastUpdate();
+
+            // Автообновление каждые 30 секунд
+            setInterval(loadDashboardStats, 30000);
+        });
+
+        // 1. Загрузка общей статистики
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch(`${API_BASE}/dashboard/`);
+                if (!response.ok) throw new Error('Ошибка загрузки статистики');
+
+                const data = await response.json();
+
+                // Обновляем карточки статистики
+                if (data.metrics) {
+                    document.getElementById('totalPolls').textContent = data.metrics.total_polls || 0;
+                    document.getElementById('totalVotes').textContent = data.metrics.total_votes || 0;
+                    document.getElementById('avgVotes').textContent = (data.metrics.avg_votes_per_poll || 0).toFixed(1);
+                    document.getElementById('activePolls').textContent = data.metrics.active_polls || 0;
+
+                    // Обновляем текст под карточками
+                    document.querySelectorAll('.stat-change').forEach(el => {
+                        el.textContent = '✓ Данные актуальны';
+                        el.style.color = '#28a745';
+                    });
+                }
+
+                updateLastUpdate();
+
+            } catch (error) {
+                console.error('Ошибка загрузки статистики:', error);
+                showError('Не удалось загрузить статистику');
+            }
+        }
+
+        // 2. Загрузка списка голосований
+        async function loadPollsList() {
+            const pollsList = document.getElementById('pollsList');
+            pollsList.innerHTML = '<div class="loading">Загрузка голосований...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/filter/`);
+                if (!response.ok) throw new Error('Ошибка загрузки списка');
+
+                const data = await response.json();
+
+                if (data.polls && data.polls.length > 0) {
+                    allPolls = data.polls;
+                    renderPollsList(allPolls);
+                    updatePollSelect(allPolls);
+                    document.getElementById('filterControls').style.display = 'block';
+                } else {
+                    pollsList.innerHTML = '<div class="error">Нет доступных голосований</div>';
+                }
+
+            } catch (error) {
+                console.error('Ошибка загрузки списка:', error);
+                pollsList.innerHTML = '<div class="error">Ошибка загрузки списка голосований</div>';
+            }
+        }
+
+        // 3. Отображение списка голосований
+        function renderPollsList(polls) {
+            const pollsList = document.getElementById('pollsList');
+            pollsList.innerHTML = '';
+
+            polls.forEach(poll => {
+                const pollItem = document.createElement('div');
+                pollItem.className = 'poll-item';
+                pollItem.onclick = () => selectPoll(poll);
+
+                const date = new Date(poll.created_at);
+                const formattedDate = date.toLocaleDateString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+
+                pollItem.innerHTML = `
+                    <div class="poll-title">${poll.title || `Голосование #${poll.id}`}</div>
+                    <div class="poll-meta">
+                        <span><i class="fas fa-calendar"></i> ${formattedDate}</span>
+                        <span><i class="fas fa-vote-yea"></i> ${poll.votes_count || poll.vote_count || 0} голосов</span>
+                    </div>
+                `;
+
+                pollsList.appendChild(pollItem);
+            });
+        }
+
+        // 4. Обновление выпадающего списка
+        function updatePollSelect(polls) {
+            const select = document.getElementById('pollSelect');
+            select.innerHTML = '<option value="">Выберите голосование...</option>';
+
+            polls.forEach(poll => {
+                const option = document.createElement('option');
+                option.value = poll.id;
+                option.textContent = `${poll.title || `Голосование #${poll.id}`} (${poll.votes_count || poll.vote_count || 0} голосов)`;
+                select.appendChild(option);
+            });
+        }
+
+        // 5. Выбор голосования
+        async function selectPoll(poll) {
+            // Сброс выделения
+            document.querySelectorAll('.poll-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Выделение выбранного
+            event.currentTarget.classList.add('active');
+
+            // Обновление выпадающего списка
+            document.getElementById('pollSelect').value = poll.id;
+
+            // Загрузка статистики
+            await loadPollStats(poll.id);
+        }
+
+        // 6. Загрузка статистики конкретного голосования
+        async function loadPollStats(pollId) {
+            if (!pollId) return;
+
+            currentPollId = pollId;
+            const detailsDiv = document.getElementById('pollDetails');
+            detailsDiv.innerHTML = '<div class="loading">Загрузка статистики...</div>';
+            document.getElementById('chartSection').style.display = 'none';
+
+            try {
+                // Загружаем статистику
+                const statsResponse = await fetch(`${API_BASE}/stats/${pollId}/`);
+                if (!statsResponse.ok) throw new Error('Ошибка загрузки статистики');
+
+                const statsData = await statsResponse.json();
+
+                // Отображаем детали
+                displayPollDetails(statsData);
+
+                // Загружаем график
+                await loadChart(pollId);
+
+                // Показываем секцию с графиком и таблицей
+                document.getElementById('chartSection').style.display = 'block';
+
+            } catch (error) {
+                console.error('Ошибка загрузки статистики голосования:', error);
+                detailsDiv.innerHTML = '<div class="error">Не удалось загрузить статистику голосования</div>';
+            }
+        }
+
+        // 7. Отображение деталей голосования
+        function displayPollDetails(data) {
+            const detailsDiv = document.getElementById('pollDetails');
+
+            if (!data.poll) {
+                detailsDiv.innerHTML = '<div class="error">Нет данных о голосовании</div>';
+                return;
+            }
+
+            const poll = data.poll;
+            const date = new Date(poll.created_at);
+            const formattedDate = date.toLocaleDateString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            detailsDiv.innerHTML = `
+                <div class="success">
+                    <h3 style="margin-bottom: 10px;"><i class="fas fa-poll-h"></i> ${poll.title || 'Без названия'}</h3>
+                    <p><i class="fas fa-info-circle"></i> ${poll.description || 'Нет описания'}</p>
+                    <p><i class="fas fa-calendar"></i> Создано: ${formattedDate}</p>
+                    <p><i class="fas fa-vote-yea"></i> Всего голосов: <strong>${poll.total_votes || 0}</strong></p>
+                </div>
+            `;
+
+            // Обновляем таблицу результатов
+            updateResultsTable(data.choices || []);
+        }
+
+        // 8. Обновление таблицы результатов
+        function updateResultsTable(choices) {
+            const resultsBody = document.getElementById('resultsBody');
+            resultsBody.innerHTML = '';
+
+            if (!choices || choices.length === 0) {
+                resultsBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Нет данных о вариантах ответа</td></tr>';
+                return;
+            }
+
+            // Сортируем по количеству голосов
+            choices.sort((a, b) => b.votes_count - a.votes_count);
+
+            let totalVotes = 0;
+            choices.forEach(choice => {
+                totalVotes += choice.votes_count || 0;
+            });
+
+            choices.forEach(choice => {
+                const percentage = totalVotes > 0 ? ((choice.votes_count || 0) / totalVotes * 100).toFixed(1) : 0;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${choice.choice_text || 'Без названия'}</strong></td>
+                    <td>${choice.votes_count || 0}</td>
+                    <td>${percentage}%</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%"></div>
+                        </div>
+                    </td>
+                `;
+                resultsBody.appendChild(row);
+            });
+        }
+
+        // 9. Загрузка графика
+        async function loadChart(pollId) {
+            const chartType = document.getElementById('chartType').value;
+            const chartContainer = document.getElementById('chartContainer');
+
+            try {
+                const response = await fetch(`${API_BASE}/charts/${pollId}/?chart_type=${chartType}`);
+                if (!response.ok) throw new Error('Ошибка загрузки графика');
+
+                const data = await response.json();
+
+                if (data.image_base64) {
+                    // Отображаем PNG изображение
+                    chartContainer.innerHTML = `<img src="data:image/png;base64,${data.image_base64}" alt="График" class="chart-image">`;
+                } else if (data.svg_data) {
+                    // Отображаем SVG
+                    chartContainer.innerHTML = data.svg_data;
+                } else if (data.message) {
+                    // Показываем сообщение, если нет реального графика
+                    chartContainer.innerHTML = `
+                        <div style="padding: 40px; text-align: center;">
+                            <i class="fas fa-chart-bar" style="font-size: 48px; color: #6a11cb; margin-bottom: 20px;"></i>
+                            <h3>${data.title || 'График'}</h3>
+                            <p>${data.message}</p>
+                            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                                <p><strong>Тестовые данные:</strong></p>
+                                <p>${JSON.stringify(data.data || {}, null, 2)}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Ошибка загрузки графика:', error);
+                chartContainer.innerHTML = '<div class="error">Не удалось загрузить график</div>';
+            }
+        }
+
+        // 10. Обновление графика
+        function updateChart() {
+            if (currentPollId) {
+                loadChart(currentPollId);
+            }
+        }
+
+        // 11. Сортировка голосований
+        function sortPolls(criteria) {
+            let sortedPolls = [...allPolls];
+
+            switch(criteria) {
+                case 'popularity':
+                    sortedPolls.sort((a, b) => (b.votes_count || 0) - (a.votes_count || 0));
+                    break;
+                case 'title':
+                    sortedPolls.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+                    break;
+                case 'date':
+                default:
+                    sortedPolls.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    break;
+            }
+
+            renderPollsList(sortedPolls);
+        }
+
+        // 12. Экспорт данных
+        async function exportData(format) {
+            if (!currentPollId) {
+                alert('Выберите голосование для экспорта');
+                return;
+            }
+
+            try {
+                const url = `${API_BASE}/export/${currentPollId}/?format=${format}`;
+                window.open(url, '_blank');
+
+                // Показываем сообщение об успехе
+                showMessage(`Данные экспортированы в формате ${format.toUpperCase()}`, 'success');
+
+            } catch (error) {
+                console.error('Ошибка экспорта:', error);
+                showMessage('Ошибка при экспорте данных', 'error');
+            }
+        }
+
+        // 13. Фильтрация по дате
+        function filterByDate() {
+            // Здесь можно добавить логику фильтрации
+            showMessage('Фильтр по дате применен', 'success');
+        }
+
+        // 14. Обновление всех данных
+        function refreshAll() {
+            loadDashboardStats();
+            loadPollsList();
+            if (currentPollId) {
+                loadPollStats(currentPollId);
+            }
+            showMessage('Данные обновлены', 'success');
+        }
+
+        // 15. Вспомогательные функции
+        function updateLastUpdate() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('lastUpdate').textContent = timeString;
+        }
+
+        function showMessage(text, type = 'success') {
+            const message = document.createElement('div');
+            message.className = type === 'success' ? 'success' : 'error';
+            message.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i> ${text}`;
+
+            document.querySelector('.controls').insertBefore(message, document.querySelector('.controls-grid'));
+
+            setTimeout(() => {
+                message.remove();
+            }, 3000);
+        }
+
+        function showError(text) {
+            showMessage(text, 'error');
+        }
+
+        // Инициализация с тестовыми данными, если API недоступно
+        function initializeWithTestData() {
+            document.getElementById('totalPolls').textContent = '12';
+            document.getElementById('totalVotes').textContent = '1,245';
+            document.getElementById('avgVotes').textContent = '103.8';
+            document.getElementById('activePolls').textContent = '8';
+
+            // Обновляем текст под карточками
+            document.querySelectorAll('.stat-change').forEach(el => {
+                el.textContent = '⚠ Тестовые данные';
+                el.style.color = '#ffc107';
+            });
+        }
+
+        // Проверяем доступность API при загрузке
+        setTimeout(() => {
+            if (document.getElementById('totalPolls').textContent === '0') {
+                initializeWithTestData();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

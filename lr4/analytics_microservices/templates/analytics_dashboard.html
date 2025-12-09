@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель аналитики голосований</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Заголовок и статус */
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .status {
+            background-color: #ff9800;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status i {
+            font-size: 16px;
+        }
+
+        /* Основной контент в две колонки */
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Карточки */
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f2f5;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h2 i {
+            color: #3498db;
+        }
+
+        /* Состояние БД */
+        .db-status {
+            background-color: #fff5f5;
+            border-left: 5px solid #e74c3c;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .db-status h3 {
+            color: #c0392b;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .admin-link {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: background-color 0.3s;
+        }
+
+        .admin-link:hover {
+            background-color: #2980b9;
+        }
+
+        /* Тестовые данные */
+        .test-data {
+            background-color: #f8fff5;
+            border-left: 5px solid #27ae60;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .test-data h3 {
+            color: #27ae60;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        /* Статистика */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f8fafc;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #7f8c8d;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-description {
+            font-size: 13px;
+            color: #95a5a6;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        /* Таблица */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: #f1f8ff;
+            color: #3498db;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e3f2fd;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f2f5;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        /* Примеры голосований */
+        .example-item {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #9b59b6;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .example-item i {
+            color: #9b59b6;
+        }
+
+        /* Индикаторы */
+        .indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .indicator.active {
+            background-color: #e8f6f3;
+            color: #27ae60;
+        }
+
+        .indicator.inactive {
+            background-color: #fbeeeb;
+            color: #e74c3c;
+        }
+
+        /* Футер */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #95a5a6;
+            font-size: 14px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-item {
+                padding: 15px;
+            }
+
+            .stat-value {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Заголовок -->
+        <div class="header">
+            <h1><i class="fas fa-chart-bar"></i> Панель аналитики голосований</h1>
+            <div class="status">
+                <i class="fas fa-vial"></i> ТЕСТИРОВАНИЕ
+            </div>
+        </div>
+
+        <!-- Подзаголовок -->
+        <div class="card">
+            <h2><i class="fas fa-database"></i> Реальные данные проекта</h2>
+            <p>Система аналитики для отслеживания голосований и активности пользователей.</p>
+        </div>
+
+        <div class="content">
+            <!-- Левая колонка -->
+            <div>
+                <!-- Информация о проекте -->
+                <div class="card">
+                    <h2><i class="fas fa-info-circle"></i> Информация о проекте</h2>
+
+                    <div class="db-status">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Состояние базы данных: ПУСТО</h3>
+                        <p>В базе данных отсутствуют голосования. Для начала работы необходимо создать голосования через административную панель.</p>
+                        <a href="/admin/" class="admin-link">
+                            <i class="fas fa-cog"></i> Перейти в админку Django
+                        </a>
+                    </div>
+
+                    <div class="test-data">
+                        <h3><i class="fas fa-vial"></i> Тестовые данные</h3>
+                        <p>В настоящее время используются демонстрационные данные для отображения интерфейса панели аналитики.</p>
+                    </div>
+                </div>
+
+                <!-- Последние голосования -->
+                <div class="card">
+                    <h2><i class="fas fa-history"></i> Последние голосования</h2>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Название голосования</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="example-item">
+                                            <i class="fas fa-poll"></i> Пример голосования 1
+                                        </div>
+                                    </td>
+                                    <td><span class="indicator inactive">Неактивно</span></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="example-item">
+                                            <i class="fas fa-poll"></i> Пример голосования 2
+                                        </div>
+                                    </td>
+                                    <td><span class="indicator active">Активно</span></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="example-item">
+                                            <i class="fas fa-poll"></i> Пример голосования 3
+                                        </div>
+                                    </td>
+                                    <td><span class="indicator inactive">Неактивно</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p style="margin-top: 15px; font-size: 14px; color: #95a5a6; font-style: italic;">
+                        <i class="fas fa-info-circle"></i> Это демонстрационные данные. Когда появятся реальные голосования, они отобразятся здесь.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Правая колонка -->
+            <div>
+                <!-- Статистика БД -->
+                <div class="card">
+                    <h2><i class="fas fa-chart-pie"></i> Статистика БД</h2>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Голосований</div>
+                            <div class="stat-description">
+                                {% if total_polis > 0 %}СРЕДНИЕ ДАННЫЕ{% else %}НЕТ ДАННЫХ{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Голосов</div>
+                            <div class="stat-description">
+                                {% if total_votes > 0 %}АКТИВНОСТЬ ПОЛЬЗОВАТЕЛЕЙ{% else %}ГОЛОСОВ НЕТ{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-value">0.0</div>
+                            <div class="stat-label">Среднее</div>
+                            <div class="stat-description">
+                                {% if avg_votes > 0 %}ГОЛОСОВ НА ГОЛОСОВАНИЕ{% else %}НЕТ СТАТИСТИКИ{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Активных</div>
+                            <div class="stat-description">
+                                {% if active_polis > 0 %}СЕЙЧАС АКТИВНО{% else %}ВСЕ НЕАКТИВНЫ{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 25px; padding: 15px; background-color: #f0f8ff; border-radius: 8px;">
+                        <h3 style="color: #3498db; margin-bottom: 10px; font-size: 16px;">
+                            <i class="fas fa-lightbulb"></i> Как начать работу?
+                        </h3>
+                        <ol style="padding-left: 20px; color: #555;">
+                            <li>Перейдите в админ-панель Django по ссылке выше</li>
+                            <li>Создайте одно или несколько голосований</li>
+                            <li>Вернитесь на эту страницу, чтобы увидеть статистику</li>
+                            <li>Используйте API или интерфейс для сбора голосов</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Системная информация -->
+                <div class="card">
+                    <h2><i class="fas fa-cogs"></i> Системная информация</h2>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #f0f2f5;">
+                            <i class="fas fa-code-branch" style="color: #3498db; width: 20px;"></i>
+                            <strong>Версия панели:</strong> 1.0.0
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #f0f2f5;">
+                            <i class="fas fa-calendar-alt" style="color: #3498db; width: 20px;"></i>
+                            <strong>Последнее обновление:</strong> 15.10.2023
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #f0f2f5;">
+                            <i class="fas fa-server" style="color: #3498db; width: 20px;"></i>
+                            <strong>Режим работы:</strong> Демонстрационный
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-bell" style="color: #3498db; width: 20px;"></i>
+                            <strong>Уведомления:</strong> Отключены (нет данных)
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Футер -->
+        <div class="footer">
+            <p>Панель аналитики голосований &copy; 2023 | Система мониторинга активности пользователей</p>
+            <p style="margin-top: 5px; font-size: 12px;">
+                <i class="fas fa-code"></i> Разработано на Django |
+                <i class="fas fa-database"></i> База данных: SQLite/PostgreSQL
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Небольшой скрипт для имитации загрузки данных
+        document.addEventListener('DOMContentLoaded', function() {
+            // Меняем статус "Пусто" через 3 секунды для демонстрации
+            setTimeout(function() {
+                const dbStatus = document.querySelector('.db-status h3');
+                if (dbStatus.textContent.includes('ПУСТО')) {
+                    // В реальном приложении здесь был бы AJAX-запрос для проверки состояния БД
+                    console.log('Проверка состояния базы данных...');
+                }
+            }, 3000);
+
+            // Добавляем интерактивность кнопке админки
+            const adminLink = document.querySelector('.admin-link');
+            if (adminLink) {
+                adminLink.addEventListener('click', function(e) {
+                    if (!confirm('Вы уверены, что хотите перейти в админ-панель?')) {
+                        e.preventDefault();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

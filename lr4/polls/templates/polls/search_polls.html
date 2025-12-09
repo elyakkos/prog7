@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аналитика голосований | Статистика и графики</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary-color: #7209b7;
+            --accent-color: #f72585;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --gray-color: #6c757d;
+            --light-gray: #e9ecef;
+            --success-color: #4cc9f0;
+            --border-radius: 12px;
+            --box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            --box-shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.12);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background:
+                /* Красивый градиентный оверлей */
+                linear-gradient(
+                    135deg,
+                    rgba(12, 36, 97, 0.9) 0%,
+                    rgba(25, 25, 112, 0.85) 25%,
+                    rgba(67, 97, 238, 0.8) 50%,
+                    rgba(114, 9, 183, 0.75) 75%,
+                    rgba(247, 37, 133, 0.7) 100%
+                ),
+                /* Фоновое изображение */
+                url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover no-repeat fixed;
+
+            color: #ffffff;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Анимированные элементы фона */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 40% 40%, rgba(67, 97, 238, 0.15) 0%, transparent 30%),
+                radial-gradient(circle at 60% 60%, rgba(247, 37, 133, 0.15) 0%, transparent 30%);
+            z-index: -1;
+            animation: pulse 20s infinite alternate ease-in-out;
+        }
+
+        /* Анимация для частиц */
+        @keyframes pulse {
+            0% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+            100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Карточки со стеклянным эффектом */
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: var(--border-radius);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Эффект свечения при наведении */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            transition: left 0.7s ease;
+        }
+
+        .card:hover::before {
+            left: 100%;
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow:
+                0 15px 40px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(67, 97, 238, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-8px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card-header i {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-right: 12px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .card-header h2 {
+            font-size: 1.5rem;
+            color: #ffffff;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-panel {
+            flex: 1;
+            min-width: 320px;
+        }
+
+        .results-panel {
+            flex: 2;
+            min-width: 500px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .date-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* Стилизованные кнопки */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                0 4px 15px rgba(67, 97, 238, 0.4),
+                0 0 20px rgba(67, 97, 238, 0.2);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            transition: left 0.7s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, var(--primary-dark), #651a99);
+            transform: translateY(-3px);
+            box-shadow:
+                0 6px 20px rgba(67, 97, 238, 0.6),
+                0 0 30px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        /* Список голосований */
+        .poll-list-container {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .poll-list {
+            list-style-type: none;
+        }
+
+        .poll-item {
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary-color);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .poll-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(5px);
+            border-left-color: var(--accent-color);
+        }
+
+        .poll-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left-color: var(--accent-color);
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.15);
+        }
+
+        .poll-text {
+            font-weight: 600;
+            color: #ffffff;
+            flex-grow: 1;
+        }
+
+        .poll-date {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-left: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 15px;
+        }
+
+        /* Статистика */
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stats-title {
+            font-size: 1.8rem;
+            color: #ffffff;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            padding: 10px 18px;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-badge i {
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+
+        .stat-badge.total i {
+            color: var(--success-color);
+        }
+
+        .stat-badge.date i {
+            color: var(--secondary-color);
+        }
+
+        /* Варианты ответов */
+        .choices-list {
+            margin-top: 25px;
+        }
+
+        .choice-item {
+            margin-bottom: 15px;
+        }
+
+        .choice-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .choice-text {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .choice-percentage {
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .choice-bar {
+            height: 12px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .choice-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 6px;
+            transition: width 1.5s ease;
+        }
+
+        .choice-votes {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 4px;
+        }
+
+        /* Контейнер для графика */
+        .chart-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-placeholder {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .chart-placeholder i {
+            font-size: 4rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 15px;
+        }
+
+        .chart-placeholder h3 {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+
+        /* Полоса прокрутки */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--primary-dark), #651a99);
+        }
+
+        /* Адаптивность */
+        @media (max-width: 1100px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .search-panel, .results-panel {
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .date-group {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-meta {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .card {
+                padding: 15px;
+            }
+        }
+
+        /* Настройки API */
+        .api-config {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-top: 20px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .api-config h4 {
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+
+        /* Панель отладки */
+        .debug-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .debug-item {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .debug-error {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .debug-success {
+            color: #51cf66;
+            background: rgba(81, 207, 102, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Панель поиска -->
+        <div class="search-panel card">
+            <div class="card-header">
+                <i class="fas fa-search"></i>
+                <h2>Поиск голосований</h2>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="search-query">
+                    <i class="fas fa-filter"></i> Поиск по названию
+                </label>
+                <input type="text" id="search-query" class="form-input" placeholder="Введите ключевые слова...">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="far fa-calendar-alt"></i> Диапазон дат
+                </label>
+                <div class="date-group">
+                    <div>
+                        <label class="form-label">Начальная дата</label>
+                        <input type="date" id="start-date" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Конечная дата</label>
+                        <input type="date" id="end-date" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="sort-by">
+                    <i class="fas fa-sort-amount-down"></i> Сортировка
+                </label>
+                <select id="sort-by" class="form-input">
+                    <option value="date_desc">Дата (сначала новые)</option>
+                    <option value="date_asc">Дата (сначала старые)</option>
+                    <option value="popularity">Популярность (по голосам)</option>
+                </select>
+            </div>
+
+            <button class="btn" onclick="searchPolls()">
+                <i class="fas fa-search"></i> Найти голосования
+            </button>
+
+            <div class="poll-list-container">
+                <h3 style="margin: 20px 0 15px 0; color: rgba(255, 255, 255, 0.9); font-size: 1.1rem;">
+                    <i class="fas fa-poll"></i> Результаты поиска
+                </h3>
+                <div id="poll-list">
+                    <div class="empty-state">
+                        <i class="far fa-clipboard"></i>
+                        <p>Введите критерии поиска и нажмите "Найти голосования"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Панель результатов -->
+        <div class="results-panel">
+            <div class="card">
+                <div class="stats-header">
+                    <h2 class="stats-title">Статистика голосования</h2>
+                    <div class="stats-meta">
+                        <div class="stat-badge total">
+                            <i class="fas fa-vote-yea"></i>
+                            <span id="total-votes">0 голосов</span>
+                        </div>
+                        <div class="stat-badge date">
+                            <i class="far fa-calendar"></i>
+                            <span id="poll-date">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="poll-statistics">
+                    <div class="empty-state">
+                        <i class="far fa-chart-bar"></i>
+                        <h3>Выберите голосование</h3>
+                        <p>Выберите голосование из списка слева, чтобы просмотреть статистику и графики</p>
+                    </div>
+                </div>
+
+                <div class="choices-list" id="choices-container" style="display: none;">
+                    <h3 style="margin-bottom: 20px; color: #ffffff;">
+                        <i class="fas fa-list-ol"></i> Результаты по вариантам
+                    </h3>
+                    <div id="choices-list">
+                        <!-- Динамически заполнится -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container" id="poll-chart">
+                <div class="chart-placeholder">
+                    <i class="fas fa-chart-pie"></i>
+                    <h3>График результатов</h3>
+                    <p>Здесь будет отображаться визуализация результатов выбранного голосования</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const API_BASE_URL = '/api/analytics/';
+        let currentPollId = null;
+
+        async function searchPolls() {
+            const query = document.getElementById('search-query').value;
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const sortBy = document.getElementById('sort-by').value;
+
+            const pollList = document.getElementById('poll-list');
+            pollList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Поиск голосований...</p>
+                </div>
+            `;
+
+            let url = `${API_BASE_URL}questions/search/?`;
+            if (query) url += `q=${query}&`;
+            if (startDate) url += `start_date=${startDate}&`;
+            if (endDate) url += `end_date=${endDate}&`;
+            if (sortBy) url += `sort_by=${sortBy}&`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                pollList.innerHTML = '';
+
+                if (data.length === 0) {
+                    pollList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-search"></i>
+                            <p>Голосования не найдены. Попробуйте изменить критерии поиска.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const ul = document.createElement('ul');
+                ul.className = 'poll-list';
+
+                data.forEach(poll => {
+                    const li = document.createElement('li');
+                    li.className = 'poll-item';
+                    li.dataset.pollId = poll.id;
+
+                    const pubDate = new Date(poll.pub_date);
+                    const formattedDate = pubDate.toLocaleDateString('ru-RU', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+
+                    li.innerHTML = `
+                        <span class="poll-text">${poll.question_text}</span>
+                        <span class="poll-date">${formattedDate}</span>
+                    `;
+
+                    li.onclick = () => {
+                        document.querySelectorAll('.poll-item').forEach(item => {
+                            item.classList.remove('active');
+                        });
+                        li.classList.add('active');
+                        displayPollStatistics(poll.id);
+                    };
+
+                    ul.appendChild(li);
+                });
+
+                pollList.appendChild(ul);
+            } catch (error) {
+                pollList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Ошибка загрузки данных. Проверьте подключение к серверу.</p>
+                    </div>
+                `;
+                console.error('Ошибка при поиске голосований:', error);
+            }
+        }
+
+        async function displayPollStatistics(pollId) {
+            currentPollId = pollId;
+
+            const statsPanel = document.getElementById('poll-statistics');
+            const chartPanel = document.getElementById('poll-chart');
+            const choicesContainer = document.getElementById('choices-container');
+
+            statsPanel.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Загрузка статистики...</p>
+                </div>
+            `;
+
+            chartPanel.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Загрузка графика...</p>
+                </div>
+            `;
+
+            choicesContainer.style.display = 'none';
+
+            try {
+                const statsResponse = await fetch(`${API_BASE_URL}questions/${pollId}/stats/`);
+                const statsData = await statsResponse.json();
+
+                if (statsResponse.ok) {
+                    document.getElementById('total-votes').textContent = `${statsData.total_votes} голосов`;
+
+                    const pubDate = new Date(statsData.pub_date);
+                    document.getElementById('poll-date').textContent = pubDate.toLocaleDateString('ru-RU', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+
+                    let html = `<h3 style="color: #ffffff; margin-bottom: 20px;">${statsData.question_text}</h3>`;
+
+                    const choicesList = document.getElementById('choices-list');
+                    choicesList.innerHTML = '';
+
+                    statsData.choices.forEach(choice => {
+                        const choiceItem = document.createElement('div');
+                        choiceItem.className = 'choice-item';
+
+                        choiceItem.innerHTML = `
+                            <div class="choice-header">
+                                <span class="choice-text">${choice.choice_text}</span>
+                                <span class="choice-percentage">${choice.percentage.toFixed(1)}%</span>
+                            </div>
+                            <div class="choice-bar">
+                                <div class="choice-fill" style="width: ${choice.percentage}%"></div>
+                            </div>
+                            <div class="choice-votes">${choice.votes} голосов</div>
+                        `;
+
+                        choicesList.appendChild(choiceItem);
+                    });
+
+                    choicesContainer.style.display = 'block';
+                    statsPanel.innerHTML = html;
+                } else {
+                    statsPanel.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Ошибка загрузки статистики: ${statsData.error || 'Неизвестная ошибка'}</p>
+                        </div>
+                    `;
+                }
+
+                const chartResponse = await fetch(`${API_BASE_URL}questions/${pollId}/chart/svg/`);
+                const chartData = await chartResponse.json();
+
+                if (chartResponse.ok && chartData.svg_chart) {
+                    chartPanel.innerHTML = chartData.svg_chart;
+                } else if (chartResponse.ok && chartData.png_chart_base64) {
+                    chartPanel.innerHTML = `<img src="data:image/png;base64,${chartData.png_chart_base64}" alt="График голосования" style="max-width: 100%; height: auto;">`;
+                } else {
+                    chartPanel.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-chart-line"></i>
+                            <p>График недоступен для этого голосования</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                statsPanel.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Ошибка загрузки данных. Проверьте подключение к серверу.</p>
+                    </div>
+                `;
+
+                chartPanel.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Ошибка загрузки графика</p>
+                    </div>
+                `;
+
+                console.error('Ошибка при загрузке статистики:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('end-date').value = today;
+
+            const monthAgo = new Date();
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            document.getElementById('start-date').value = monthAgo.toISOString().split('T')[0];
+        });
+    </script>
+</body>
+</html>
