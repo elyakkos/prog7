@@ -1,0 +1,13 @@
+{
+  "token": "ya29.a0Aa7pCA-IugsSCVGm_37fflmUi8Ph_vhTV2WaEV1On7LMCh1tVcMLe7bIYwyXBDTaa8Lhs4VdImG_D24CAW-Awkqx_tyOSlqRfE5PlfbrW0-6ve8C6H3B0ZN14qZFPewRDca0230XRzQ2MC5s2poicBylBEyTzbaaBjty6mfFpFgn7uaHNywDKhOLeEHi0J7vDRNPm1UaCgYKAWoSARASFQHGX2MijmReucnlDt-dJbZs49cKbA0206",
+  "refresh_token": "1//0cy_eoQYiE7ulCgYIARAAGAwSNwF-L9Ir0XGwK1UOkEenHQWY0NfQgYV4ItUu-1wI2MlENqUI3CPUBHQe5xWao-mlxUvSkiWbEso",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "client_id": "707285092832-u9bv9jksd5gt8bpsjtgv1627cfokaa9g.apps.googleusercontent.com",
+  "client_secret": "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",
+  "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
+    "openid"
+  ],
+  "expiry": "2025-12-15T15:10:16"
+}
