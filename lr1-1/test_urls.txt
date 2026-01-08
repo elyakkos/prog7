@@ -1,0 +1,6 @@
+# Тестовые URL для примеров
+https://httpbin.org/get
+https://httpbin.org/status/200
+https://httpbin.org/status/404
+https://jsonplaceholder.typicode.com/posts/1
+https://jsonplaceholder.typicode.com/comments/1
