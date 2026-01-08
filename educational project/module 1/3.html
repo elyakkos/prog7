@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Master Quiz Game</title>
+    <style>
+        :root {
+            --primary: #FF0000;
+            --success: #00FF00;
+            --error: #0000FF;
+            --dark: #000000;
+            --light: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FF0000 0%, #0000FF 100%);
+            color: var(--dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .game-card {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+
+        /* Элементы интерфейса */
+        h1 { color: var(--primary); margin-bottom: 10px; }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .timer-bar {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            margin-bottom: 20px;
+        }
+
+        #timer-progress {
+            height: 100%;
+            background: var(--primary);
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .option-btn {
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: none;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: #f5f3ff;
+        }
+
+        .option-btn.correct { background: var(--success); color: white; border-color: var(--success); }
+        .option-btn.wrong { background: var(--error); color: white; border-color: var(--error); }
+
+        .btn-main {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .difficulty-select {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .diff-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--primary);
+            border-radius: 20px;
+            cursor: pointer;
+            background: white;
+        }
+
+        .diff-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        #leaderboard {
+            margin-top: 20px;
+            text-align: left;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="game-card">
+    <div id="start-screen">
+        <h1>Web Quiz Pro</h1>
+        <p>Проверь свои знания в веб-разработке!</p>
+
+        <div class="difficulty-select">
+            <button class="diff-btn active" onclick="setDiff('easy', this)">Легко</button>
+            <button class="diff-btn" onclick="setDiff('hard', this)">Сложно</button>
+        </div>
+<div style="text-align: left; background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+            <strong>Инструкция:</strong>
+            <ul style="padding-left: 20px; margin: 5px 0;">
+                <li>У вас 15 секунд на вопрос</li>
+                <li>За правильный ответ: +10 очков</li>
+                <li>За быструю реакцию: бонусные баллы</li>
+            </ul>
+        </div>
+
+        <button class="btn-main" onclick="startGame()">Начать игру</button>
+
+        <div id="leaderboard">
+            <strong>🏆 Рекорды:</strong>
+            <div id="high-scores">Пусто</div>
+        </div>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div class="stats">
+            <span>Счет: <span id="score">0</span></span>
+            <span id="timer-text">15с</span>
+        </div>
+        <div class="timer-bar"><div id="timer-progress"></div></div>
+
+        <h2 id="question-text" class="fade-in">Загрузка...</h2>
+        <div id="options-container" class="options-grid"></div>
+    </div>
+
+    <div id="end-screen" class="hidden">
+        <h1 id="result-title">Конец игры!</h1>
+        <p style="font-size: 1.5rem;">Ваш результат: <span id="final-score">0</span></p>
+        <button class="btn-main" onclick="restartGame()">Играть снова</button>
+    </div>
+</div>
+
+<script>
+    const database = {
+        easy: [
+            { q: "Что расшифровывается как HTML?", a: ["HyperText Markup Language", "High Tech Machine Language", "Home Tool Markup Language"], c: 0 },
+            { q: "Какой тег создает жирный текст?", a: ["<lb>", "<b>", "<bold>"], c: 1 },
+            { q: "Какое свойство меняет цвет текста в CSS?", a: ["background", "font-color", "color"], c: 2 },
+            { q: "Какой символ используется для ID в CSS?", a: ["#", ".", "@"], c: 0 },
+            { q: "Как вызвать алерт в JavaScript?", a: ["msg()", "alert()", "print()"], c: 1 }
+        ],
+        hard: [
+            { q: "Какое событие срабатывает при потере фокуса?", a: ["onblur", "onfocusout", "onleave"], c: 0 },
+            { q: "Чему равно '2' + 2 - 1 в JS?", a: ["21", "3", "22"], c: 0 },
+            { q: "Какой метод удаляет последний элемент массива?", a: ["shift()", "pop()", "slice()"], c: 1 },
+            { q: "Что такое замыкание (closure)?", a: ["Функция в функции", "Доступ к внешней области видимости", "Утечка памяти"], c: 1 },
+            { q: "Как проверить тип переменной?", a: ["getType()", "instanceof", "typeof"], c: 2 }
+        ]
+    };
+
+    let currentDifficulty = 'easy';
+    let score = 0;
+    let timer;
+    let timeLeft;
+    let currentQuestions = [];
+    let qIndex = 0;
+
+    function setDiff(val, btn) {
+        currentDifficulty = val;
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function updateLeaderboard() {
+        const scores = JSON.parse(localStorage.getItem('quiz_records') || '[]');
+        const html = scores.length ? scores.map((s, i) => `<div>${i+1}. ${s.points} pts (${s.diff})</div>`).join('') : 'Будь первым!';
+        document.getElementById('high-scores').innerHTML = html;
+    }
+
+    function startGame() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        score = 0;
+        qIndex = 0;
+        currentQuestions = [...database[currentDifficulty]].sort(() => Math.random() - 0.5);
+        nextQuestion();
+    }
+
+    function nextQuestion() {
+        if (qIndex >= currentQuestions.length) return endGame();
+
+        const q = currentQuestions[qIndex];
+        document.getElementById('question-text').innerText = q.q;
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+
+        q.a.forEach((text, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn fade-in';
+            btn.innerText = text;
+            btn.onclick = () => checkAnswer(i);
+            container.appendChild(btn);
+});
+
+        startTimer();
+    }
+
+    function startTimer() {
+        clearInterval(timer);
+        timeLeft = 15;
+        const bar = document.getElementById('timer-progress');
+        const text = document.getElementById('timer-text');
+
+        timer = setInterval(() => {
+            timeLeft--;
+            text.innerText = timeLeft + 'с';
+            bar.style.width = (timeLeft / 15 * 100) + '%';
+            if (timeLeft <= 0) {
+                checkAnswer(-1); // Пропуск
+            }
+        }, 1000);
+    }
+
+    function checkAnswer(idx) {
+        clearInterval(timer);
+        const q = currentQuestions[qIndex];
+        const buttons = document.querySelectorAll('.option-btn');
+
+        buttons.forEach((btn, i) => {
+            btn.disabled = true;
+            if (i === q.c) btn.classList.add('correct');
+            else if (i === idx) btn.classList.add('wrong');
+        });
+
+        if (idx === q.c) {
+            score += 10 + timeLeft; // Бонус за время
+            document.getElementById('score').innerText = score;
+        }
+
+        setTimeout(() => {
+            qIndex++;
+            nextQuestion();
+        }, 1500);
+    }
+
+    function endGame() {
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('end-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = score;
+
+        // Сохранение рекорда
+        const scores = JSON.parse(localStorage.getItem('quiz_records') || '[]');
+        scores.push({ points: score, diff: currentDifficulty });
+        scores.sort((a, b) => b.points - a.points);
+        localStorage.setItem('quiz_records', JSON.stringify(scores.slice(0, 5)));
+        updateLeaderboard();
+    }
+
+    function restartGame() {
+        document.getElementById('end-screen').classList.add('hidden');
+        document.getElementById('start-screen').classList.remove('hidden');
+        updateLeaderboard();
+    }
+
+    // Первичная загрузка
+    updateLeaderboard();
+</script>
+
+</body>
+</html>
